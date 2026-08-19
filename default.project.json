@@ -2,22 +2,49 @@
   "name": "Projeto_Labirinto",
   "tree": {
     "$className": "DataModel",
-
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "$path": "src/server"
+      "$path": "src/ServerScriptService"
     },
-
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
-      "$path": "src/shared"
+      "$path": "src/ReplicatedStorage"
     },
-
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "$path": "src/client"
+        "$path": "src/StarterPlayerScripts"
+      }
+    },
+
+    "StarterGui": {
+      "$className": "StarterGui",
+      "$path": "src/StarterGui"
+    },
+
+    "SoundService": {
+      "$className": "SoundService",
+      "$path": "src/SoundService"
+    },
+
+    "Lighting": {
+      "$className": "Lighting",
+      "$path": "src/Lighting",
+      "$properties": {
+        "Ambient": [70, 70, 70],
+        "Brightness": 3,
+        "ColorShift_Bottom": [0, 0, 0],
+        "ColorShift_Top": [0, 0, 0],
+        "EnvironmentDiffuseScale": 1,
+        "EnvironmentSpecularScale": 1,
+        "GlobalShadows": true,
+        "LightingStyle": "Soft",
+        "OutdoorAmbient": [70, 70, 70],
+        "PrioritizeLightingQuality": true,
+        "ClockTime": 14.5,
+        "GeographicLatitude": 0,
+        "ExposureCompensation": 0
       }
     }
   }
