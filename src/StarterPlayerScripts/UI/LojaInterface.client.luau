@@ -189,7 +189,7 @@ end
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
-    if input.KeyCode == Enum.KeyCode.Tab then
+    if input.KeyCode == Enum.KeyCode.L then
         mainFrame.Visible = not mainFrame.Visible
         tooltip.Visible = false
     end
