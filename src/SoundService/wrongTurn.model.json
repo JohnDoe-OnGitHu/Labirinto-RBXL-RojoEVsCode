@@ -1,0 +1,9 @@
+{
+    "Name": "WrongTurn",
+    "className": "Sound",
+    "properties": {
+        "SoundId": "rbxassetid://81043362741688",
+        "Volume": 0.5,
+        "Looped": true
+    }
+}

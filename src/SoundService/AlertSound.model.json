@@ -1,4 +1,5 @@
 {
+    "Name": "AlertSound",
     "className": "Sound",
     "properties": {
         "SoundId": "rbxassetid://9043347462",

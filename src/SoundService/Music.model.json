@@ -3,6 +3,7 @@
     "properties": {
         "SoundId": "rbxassetid://140231968684527",
         "Volume": 0.5,
-        "Looped": true
+        "Looped": true,
+        "Playing": true
     }
 }
