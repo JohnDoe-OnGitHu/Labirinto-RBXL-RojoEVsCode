@@ -1,40 +1,34 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DadosLoja = require(ReplicatedStorage:WaitForChild("DadosLoja"))
 local DadosLabirinto = require(ReplicatedStorage:WaitForChild("DadosLabirinto"))
-local InventoryManager = require(game.ServerScriptService:WaitForChild("InventoryManager"))
 
-local eventoCompra = Instance.new("RemoteEvent")
+local eventoCompra = ReplicatedStorage:FindFirstChild("EventoCompra") or Instance.new("RemoteEvent", ReplicatedStorage)
 eventoCompra.Name = "EventoCompra"
-eventoCompra.Parent = ReplicatedStorage
 
-eventoCompra.OnServerEvent:Connect(function(player, nomeItem)
-    local infoItem = nil
+local eventoColeta = ReplicatedStorage:WaitForChild("EventoColetarItem")
+
+eventoCompra.OnServerEvent:Connect(function(player, nomeItem, quantidade, metodo)
+    quantidade = math.max(1, math.floor(quantidade or 1))
+
+    local itemInfo = nil
     for _, item in ipairs(DadosLoja.Itens) do
-        if item.Nome == nomeItem then infoItem = item; break end
+        if item.Nome == nomeItem then itemInfo = item; break end
     end
     
-    if not infoItem then return end
+    if not itemInfo then return end
 
-    -- Moedas
+    -- Tipo de Pagamento: Esfera
 
-    local moedasAtuais = DadosLabirinto.statusJogadores[player.UserId].esferasColetadas
-    if moedasAtuais < infoItem.Preco then
-        eventoCompra:FireClient(player, "Erro", "ta pobre")
-        return
+    local precoTotal = (itemInfo.PrecoEsferas or 0) * quantidade
+    local status = DadosLabirinto.statusJogadores[player.UserId]
+
+    if status and status.esferasColetadas >= precoTotal then
+        DadosLabirinto.coletarEsfera(player.UserId, -precoTotal)
+
+        for i = 1, quantidade do
+            eventoColeta:FireClient(player, itemInfo.Name, itemInfo.Imagem)
+        end
+    else
+        warn("sem dindin")
     end
-
-    -- ve os slots
-    
-    local inventarioAtual = InventoryManager.ObterInventario(player)
-    local jaPossui = table.find(inventarioAtual, nomeItem)
-
-    if not jaPossui and #inventarioAtual >= DadosLoja.MAX_SLOTS then
-        eventoCompra:FireClient(player, "AvisoSlot", "seus bolsos ta cheio mermao")
-        return
-    end
-
-    DadosLabirinto.coletarEsfera(player.UserId, -infoItem.Preco)
-    InventoryManager.AdicionarItem(player, nomeItem)
-
-    eventoCompra:FireClient(player, "Sucesso", "comprou o item " .. nomeItem)
 end)
