@@ -52,4 +52,22 @@ eventoCompra.OnServerEvent:Connect(function(player, nomeItem, quantidade, metodo
     end
 end)
 
+MarketplaceService.ProcessReceipt = function(receiptInfo)
+    local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
+    if not player then return Enum.ProductPurchaseDecision.NotProcessedYet end
 
+    local itemComprado = nil
+    for _, item in ipairs(DadosLoja.Itens) do
+        if item.ProductID == receiptInfo.ProductId then
+            itemComprado = item
+            break
+        end
+    end
+
+    if itemComprado then
+        entregarItens(player, itemComprado.Nome, itemComprado.Imagem, 1)
+        return Enum.ProductPurchaseDecision.PurchaseGranted
+    end
+
+    return Enum.ProductPurchaseDecision.NotProcessedYet
+end
