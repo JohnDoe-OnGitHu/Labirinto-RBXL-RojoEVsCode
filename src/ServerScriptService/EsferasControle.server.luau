@@ -18,6 +18,12 @@ local AMPLITUDE_FLUTUAR = 0.9
 local PERCENTUAL_DEVOLUCAO = 0.5
 local CELULA = Dados.CELULA
 
+local TEMPO_RESPAWN_MIN = 45
+local TEMPO_RESPAWN_MAX = 90
+local DISTANCIA_MINIMA_SPAWN = 12
+
+local contadorEsferas = 0
+
 local grid, offsetX, offsetZ, yChao
 
 repeat
@@ -84,16 +90,58 @@ local esferasTocadas = {}
 local esferasRestantes = 0
 local TOTAL_ESFERAS_REAL = 0
 
-local function aoTocar(esfera, outraParte, valor)
+local aoTocar
+local agendarRespawn
+local criarEsferaEmLinhaColuna
+
+agendarRespawn = function()
+	local tempoEspera = math.random(TEMPO_RESPAWN_MIN, TEMPO_RESPAWN_MAX)
+	
+	task.delay(tempoEspera, function()
+		local celulas = Dados.obterCelulasAbertas()
+
+		for i = #celulas, 2, -1 do
+			local j = math.random(i)
+			celulas[i], celulas[j] = celulas[j], celulas[i]
+		end
+
+		local posOcupadas = {}
+		for _, dados in ipairs(esferasAtivas) do
+			if dados.parte and dados.parte.Parent then
+				table.insert(posOcupadas, dados.parte.Position)
+			end
+		end
+
+		for _, celula in ipairs(celulas) do
+			local x = (celula.c - 1 + 0.5) * CELULA + offsetX
+			local z = -(celula.l - 1) * CELULA + offsetZ
+			local posVector = Vector3.new(x, yChao + ALTURA_FLUTUACAO, z)
+			
+			local distanciaValida = true
+			for _, posAtiva in ipairs(posOcupadas) do
+				if (posVector - posAtiva).Magnitude < (DISTANCIA_MINIMA_SPAWN) then
+					distanciaValida = false
+					break
+				end
+			end
+			
+			if distanciaValida then
+				local novaEsfera = criarEsferaEmLinhaColuna(celula.l, celula.c, tick())
+				if novaEsfera then
+					esferasRestantes += 1
+					eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS_REAL, nil, nil)
+					break
+				end
+			end
+		end
+	end)
+end
+aoTocar = function(esfera, outraParte, valor, ehEspecial)
 	valor = valor or 1
-	if esferasTocadas[esfera] then
-		return
-	end
+	if esferasTocadas[esfera] then return end
 
 	local personagem = outraParte.Parent
-	if not personagem then
-		return
-	end
+	if not personagem then return end
 
 	local jogador = Players:GetPlayerFromCharacter(personagem)
 	if not jogador then
@@ -119,16 +167,14 @@ local function aoTocar(esfera, outraParte, valor)
 	esfera:Destroy()
 
 	local coletadasPorEste = Dados.statusJogadores[jogador.UserId].esferasColetadas	
-	eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS, jogador.UserId, coletadasPorEste)
+	eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS, nil, nil)
+
+	if not ehEspecial then
+		agendarRespawn()
+	end
 end
 
-for _, dados in ipairs(esferasAtivas) do
-	dados.parte.Touched:Connect(function(outraParte)
-		aoTocar(dados.parte, outraParte, dados.valor or 1)
-	end)
-end
-
-local function criarEsfera(linha, coluna, indice)
+criarEsferaEmLinhaColuna = function(linha, coluna, indice)
 	local x = (coluna - 1 + 0.5) * CELULA + offsetX
 	local z = -(linha - 1) * CELULA + offsetZ
 	local y = yChao + ALTURA_FLUTUACAO
@@ -169,6 +215,10 @@ local function criarEsfera(linha, coluna, indice)
 		}
 		
 		table.insert(esferasAtivas, entrada)
+
+		esfera.Touched:Connect(function(outraParte)
+			aoTocar(esfera, outraParte, 1, false)
+		end)
 	else
 		warn("[Esferas] Posição foi tirada na colsião da parede no ", linha, coluna)
 	end
@@ -242,10 +292,15 @@ local function devolverEsferas(jogador)
 	end
 
 	eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS, jogador.UserId, 0)
-	print("[Esferas] " .. jogador.Name .. " foi oofed. conseguimos devolver " .. quantidade .. " de esferas devolta. o resto ainda esta perdido")
 end
 
 Players.PlayerAdded:Connect(function(jogador)
+	task.delay(1, function()
+		local status = Dados.statusJogadores[jogador.UserId]
+		local minhasColetadas = status and status.esferasColetadas or 0
+		eventoHUD:FireClient(jogador, TOTAL_ESFERAS_REAL, jogador.UserId, minhasColetadas)
+	end)
+
 	jogador.CharacterAdded:Connect(function(char)
 		local hum = char:WaitForChild("Humanoid")
 		hum.Died:Connect(function()
@@ -255,7 +310,7 @@ Players.PlayerAdded:Connect(function(jogador)
 end)
 
 for i, pos in ipairs(posicoesEscolhidas) do
-	criarEsfera(pos.l, pos.c, i)
+	criarEsferaEmLinhaColuna(pos.l, pos.c, i)
 end
 
 esferasRestantes = #esferasAtivas
