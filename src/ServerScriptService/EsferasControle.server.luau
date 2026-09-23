@@ -10,8 +10,7 @@ local eventoHUD = ReplicatedStorage:WaitForChild("AtualizarEsferas")
 
 local contadorEsferas = 0
 
-local TOTAL_ESFERAS = 50
-local DISTANCIA_MINIMA = 7
+local ESFERA_POR_JOGADOR = 5
 local ALTURA_FLUTUACAO = 4
 local VELOCIDADE_FLUTUAR = 0.8
 local AMPLITUDE_FLUTUAR = 0.9
@@ -48,10 +47,11 @@ end
 
 local posicoesEscolhidas = {}
 local tentativaDistancia = 12
+local quantidadeInicial = #Players:GetPlayers() * ESFERA_POR_JOGADOR
 
-while #posicoesEscolhidas < TOTAL_ESFERAS and tentativaDistancia >= 2 do
+while #posicoesEscolhidas < quantidadeInicial and tentativaDistancia >= 2 do
 	for _, celula in ipairs(celulasAbertas) do
-		if #posicoesEscolhidas >= TOTAL_ESFERAS then break end
+		if #posicoesEscolhidas >= quantidadeInicial then break end
 		
 		local jaEscolhida = false
 		
@@ -129,7 +129,12 @@ agendarRespawn = function()
 				local novaEsfera = criarEsferaEmLinhaColuna(celula.l, celula.c, tick())
 				if novaEsfera then
 					esferasRestantes += 1
-					eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS_REAL, nil, nil)
+
+					for _, jogador in ipairs(Players:GetPlayer()) do
+						local status = Dados.statusJogadores[jogador.UserId]
+						local minhasColetadas = status and status.esferasColetadas or 0
+						eventoHUD:FireClient(jogador, esferasRestantes, minhasColetadas)
+					end
 					break
 				end
 			end
@@ -166,8 +171,11 @@ aoTocar = function(esfera, outraParte, valor, ehEspecial)
 	game:GetService("Debris"):AddItem(somColeta, 2)
 	esfera:Destroy()
 
-	local coletadasPorEste = Dados.statusJogadores[jogador.UserId].esferasColetadas	
-	eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS, nil, nil)
+	for _, jogadorAtual in ipairs(Players:GetPlayers()) do
+		local status = Dados.statusJogadores[jogadorAtual.UserId]
+		local minhasColetadas = status and status.esferasColetadas or 0
+		eventoHUD:FireClient(jogadorAtual, esferasNoMapa, minhasColetadas)
+	end
 
 	if not ehEspecial then
 		agendarRespawn()
@@ -215,6 +223,7 @@ criarEsferaEmLinhaColuna = function(linha, coluna, indice)
 		}
 		
 		table.insert(esferasAtivas, entrada)
+		esferaNoMapa += 1
 
 		esfera.Touched:Connect(function(outraParte)
 			aoTocar(esfera, outraParte, 1, false)
@@ -267,6 +276,8 @@ local function criarEsferaEspecial()
 				valor = 2
 			}
 			table.insert(esferasAtivas, entrada)
+			esferaNoMapa += 1
+
 			esfera.Touched:Connect(function(outraParte)
 				aoTocar(esfera, outraParte, 2)
 			end)
@@ -291,14 +302,27 @@ local function devolverEsferas(jogador)
 		criarEsferaEspecial()
 	end
 
-	eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS, jogador.UserId, 0)
+	esferaNoMapa = #esferaAtivas
+
+	for _, jogadorAtual in ipairs(Players:GetPlayers()) do
+		local statusAtual = Dados.statusJogadores[jogadorAtual.UserId]
+		local minhasColetadas = statusAtual and statusAtual.esferasColetadas or 0
+		eventoHUD:FireClient(jogadorAtual, esferasNoMapa, minhasColetadas)
+	end
 end
 
 Players.PlayerAdded:Connect(function(jogador)
 	task.delay(1, function()
+		criarEsferaParaNovoJogador()
+
 		local status = Dados.statusJogadores[jogador.UserId]
 		local minhasColetadas = status and status.esferasColetadas or 0
-		eventoHUD:FireClient(jogador, TOTAL_ESFERAS_REAL, jogador.UserId, minhasColetadas)
+		
+		for _, jogadorAtual in ipairs(Players:GetPlayers()) do
+			local statusAtual = Dados.statusJogadores[jogadorAtual.UserId]
+			local coletadas = statusAtual and statusAtual.esferasColetadas or 0
+			eventoHUD:FireClient(jogadorAtual, esferasNoMapa, minhasColetadas)
+		end
 	end)
 
 	jogador.CharacterAdded:Connect(function(char)
@@ -313,14 +337,12 @@ for i, pos in ipairs(posicoesEscolhidas) do
 	criarEsferaEmLinhaColuna(pos.l, pos.c, i)
 end
 
-esferasRestantes = #esferasAtivas
-TOTAL_ESFERAS_REAL = #esferasAtivas
-eventoHUD:FireAllClients(esferasRestantes, TOTAL_ESFERAS_REAL, nil, 0)
+esferasNoMapa = #esferasAtivas
 
-for _, dados in ipairs(esferasAtivas) do
-	dados.parte.Touched:Connect(function(outraParte)
-		aoTocar(dados.parte, outraParte, dados.valor or 1)
-	end)
+for _, jogador in ipairs(esferasAtivas) do
+	local status = Dados.statusJogadores[jogador.UserId]
+	local minhasColetadas = status and status.esferasColetadas or 0
+	eventoHUD:FireClient(jogador, esferasNoMapa, minhasColetadas)
 end
 
 RunService.Heartbeat:Connect(function()

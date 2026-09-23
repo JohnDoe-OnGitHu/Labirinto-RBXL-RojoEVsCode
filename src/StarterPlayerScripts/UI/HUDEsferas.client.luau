@@ -110,7 +110,8 @@ TextLabel_3.BorderSizePixel = 0
 TextLabel_3.Position = UDim2.new(0.725645781, 0, 0, 0)
 TextLabel_3.Size = UDim2.new(0.246719554, 0, 0.319999993, 0)
 TextLabel_3.Font = Enum.Font.Unknown
-TextLabel_3.Text = ":Global 🌐"
+TextLabel_3.Text = ":Global 🌐.
+"
 TextLabel_3.TextColor3 = Color3.fromRGB(0, 0, 0)
 TextLabel_3.TextScaled = true
 TextLabel_3.TextSize = 14.000
