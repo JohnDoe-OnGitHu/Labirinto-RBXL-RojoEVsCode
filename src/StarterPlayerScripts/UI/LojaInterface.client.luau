@@ -7,7 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
+local _TweenService = game:GetService("TweenService")
 
 -- Módulos e Eventos
 local DadosLoja = require(ReplicatedStorage:WaitForChild("DadosLoja"))
@@ -104,8 +104,8 @@ local function criarCardItem(itemInfo)
 	-- Nome
 	local nome = Instance.new("TextLabel")
 	nome.Text = itemInfo.Nome:upper()
-	nome.Size = UDim2.new(1, 0, 0.15, 0)
-	nome.Position = UDim2.fromScale(0, 0.5)
+	nome.Size = UDim2.new(0.9, 0, 0.1, 0)
+	nome.Position = UDim2.fromScale(0.05, 0.45)
 	nome.TextColor3 = Color3.new(1, 1, 1)
 	nome.Font = Enum.Font.GothamBold
 	nome.TextScaled = true
@@ -146,18 +146,6 @@ local function criarCardItem(itemInfo)
 	btnMenos.TextColor3 = Color3.new(1,1,1)
 	btnMenos.BackgroundTransparency = 0.5
 	btnMenos.Parent = seletorFrame
-
-	-- Botão Comprar (Esferas)
-	local btnComprar = Instance.new("TextButton")
-	-- Se itemInfo.PrecoEsferas não existir, ele usa 0
-    btnComprar.Text = "🛒 " .. (itemInfo.PrecoEsferas or 0) .. " Esferas"
-	btnComprar.Size = UDim2.new(0.9, 0, 0.15, 0)
-	btnComprar.Position = UDim2.fromScale(0.05, 0.82)
-	btnComprar.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-	btnComprar.TextColor3 = Color3.new(1, 1, 1)
-	btnComprar.Font = Enum.Font.GothamBold
-	btnComprar.Parent = card
-	Instance.new("UICorner", btnComprar)
 
 	-- ── CONTAINER DOS BOTÕES (LADO A LADO) ──
 	local botoesFrame = Instance.new("Frame")
