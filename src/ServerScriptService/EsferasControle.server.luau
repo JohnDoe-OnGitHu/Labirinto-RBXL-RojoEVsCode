@@ -7,9 +7,6 @@ local Dados = require(game.ReplicatedStorage:WaitForChild("DadosLabirinto"))
 
 local eventoHUD = ReplicatedStorage:WaitForChild("AtualizarEsferas")
 
-
-local contadorEsferas = 0
-
 local ESFERA_POR_JOGADOR = 5
 local ALTURA_FLUTUACAO = 4
 local VELOCIDADE_FLUTUAR = 0.8
@@ -41,6 +38,8 @@ for i = #celulasAbertas, 2, -1 do
 	celulasAbertas[i], celulasAbertas[j] = celulasAbertas[j], celulasAbertas[i]
 end
 
+-- ESCOLHE POSIÇÕES COM DISTÂNCIA MÍNIMA
+
 local function distanciaCelulas(a, b)
 	return math.abs(a.l - b.l) + math.abs(a.c - b.c)
 end
@@ -49,7 +48,9 @@ local posicoesEscolhidas = {}
 local tentativaDistancia = 12
 local quantidadeInicial = #Players:GetPlayers() * ESFERA_POR_JOGADOR
 
-while #posicoesEscolhidas < quantidadeInicial and tentativaDistancia >= 2 do
+while #posicoesEscolhidas < quantidadeInicial
+	and tentativaDistancia >= 2 do
+
 	for _, celula in ipairs(celulasAbertas) do
 		if #posicoesEscolhidas >= quantidadeInicial then break end
 		
@@ -81,23 +82,44 @@ while #posicoesEscolhidas < quantidadeInicial and tentativaDistancia >= 2 do
 	tentativaDistancia -= 1
 end
 
-print("[Esferas] foi criadas pelo ar que criou o ar que fez o ar que criou o ar que fez o ar que criou o ar que fez o ar que criou o ar que fez o ar em " .. #posicoesEscolhidas .. " belza?")
+-- ESTADO
 
 local pasta = workspace:WaitForChild("Labirinto")
 
 local esferasAtivas = {}
 local esferasTocadas = {}
-local esferasRestantes = 0
-local TOTAL_ESFERAS_REAL = 0
+local esferasNoMapa = 0
+
 
 local aoTocar
 local agendarRespawn
 local criarEsferaEmLinhaColuna
 
+local function obterLimiteEsferas()
+	return #Players:GetPlayers() * ESFERA_POR_JOGADOR
+end
+
+-- RESPAWN
+
 agendarRespawn = function()
 	local tempoEspera = math.random(TEMPO_RESPAWN_MIN, TEMPO_RESPAWN_MAX)
 	
 	task.delay(tempoEspera, function()
+
+		local limiteEsferas = obterLimiteEsferas()
+
+		if esferasNoMapa >= limiteEsferas then
+			print(
+				"🔴 [ Respawn ] Limite ta babo ",
+				esferasNoMapa,
+				"/",
+				limiteEsferas,
+				" ta?"
+			)
+
+			return
+		end
+
 		local celulas = Dados.obterCelulasAbertas()
 
 		for i = #celulas, 2, -1 do
@@ -128,12 +150,10 @@ agendarRespawn = function()
 			if distanciaValida then
 				local novaEsfera = criarEsferaEmLinhaColuna(celula.l, celula.c, tick())
 				if novaEsfera then
-					esferasRestantes += 1
-
-					for _, jogador in ipairs(Players:GetPlayer()) do
+					for _, jogador in ipairs(Players:GetPlayers()) do
 						local status = Dados.statusJogadores[jogador.UserId]
 						local minhasColetadas = status and status.esferasColetadas or 0
-						eventoHUD:FireClient(jogador, esferasRestantes, minhasColetadas)
+						eventoHUD:FireClient(jogador, esferasNoMapa, minhasColetadas)
 					end
 					break
 				end
@@ -156,7 +176,7 @@ aoTocar = function(esfera, outraParte, valor, ehEspecial)
 	Dados.coletarEsfera(jogador.UserId, valor)
 
 	esferasTocadas[esfera] = true
-	esferasRestantes -= 1
+	esferasNoMapa -= 1
 
 	for i, dados in ipairs(esferasAtivas) do
 		if dados.parte == esfera then
@@ -195,8 +215,18 @@ criarEsferaEmLinhaColuna = function(linha, coluna, indice)
 	
 	local partesNaParede = workspace:GetPartBoundsInBox(CFrame.new(posicaoAlvo), Vector3.new(2, 2, 2), params)
 	
-	if #partesNaParede == 0 then
-		
+	if #partesNaParede > 0 then
+	
+		warn(
+			"[Esferas] Posição descartada por colisão com parede em:",
+			linha,
+			coluna
+		)
+
+		return nil
+	end
+
+
 		local esfera = Instance.new("Part")
 		esfera.Name         = "Esfera_" .. indice
 		esfera.Shape        = Enum.PartType.Ball
@@ -223,15 +253,20 @@ criarEsferaEmLinhaColuna = function(linha, coluna, indice)
 		}
 		
 		table.insert(esferasAtivas, entrada)
-		esferaNoMapa += 1
+
+	-- ========================================================
+	-- IMPORTANTE:
+	-- somente aqui o contador é aumentado.
+	-- Quem chama esta função NÃO aumenta novamente.
+	-- ========================================================
+
+		esferasNoMapa += 1
 
 		esfera.Touched:Connect(function(outraParte)
 			aoTocar(esfera, outraParte, 1, false)
 		end)
-	else
-		warn("[Esferas] Posição foi tirada na colsião da parede no ", linha, coluna)
-	end
 	
+		return esfera
 end
 
 
@@ -246,11 +281,16 @@ local function criarEsferaEspecial()
 	
 	local posOcupadas = {}
 	for _, dados in ipairs(esferasAtivas) do
-		table.insert(posOcupadas, dados.parte.Position)
+
+		if dados.parte and dados.parte.Parent then
+			table.insert(posOcupadas, dados.parte.Position)
+		end
 	end
 	
 	for _, cel in ipairs(celulas) do
 		if Dados.posicaoEhValida(cel.posicao, posOcupadas, 15) then
+			contadorEsferas += 1
+
 			local esfera = Instance.new("Part")
 			esfera.Name         = "EsferaEspecial_" .. contadorEsferas
 			esfera.Shape        = Enum.PartType.Ball
@@ -276,7 +316,7 @@ local function criarEsferaEspecial()
 				valor = 2
 			}
 			table.insert(esferasAtivas, entrada)
-			esferaNoMapa += 1
+			esferasNoMapa += 1
 
 			esfera.Touched:Connect(function(outraParte)
 				aoTocar(esfera, outraParte, 2)
@@ -302,7 +342,7 @@ local function devolverEsferas(jogador)
 		criarEsferaEspecial()
 	end
 
-	esferaNoMapa = #esferaAtivas
+	esferasNoMapa = #esferasAtivas
 
 	for _, jogadorAtual in ipairs(Players:GetPlayers()) do
 		local statusAtual = Dados.statusJogadores[jogadorAtual.UserId]
@@ -311,17 +351,64 @@ local function devolverEsferas(jogador)
 	end
 end
 
+local function criarEsferaParaNovoJogador()
+	local celulas = Dados.obterCelulasAbertas()
+	for i = #celulas, 2, -1 do
+		local j = math.random(i)
+		celulas[i], celulas[j] = celulas[j], celulas[i]
+	end
+
+	local posOcupadas = {}
+
+	for _, dados in ipairs(esferasAtivas) do
+		if dados.parte and dados.parte.Parent then
+			table.insert(posOcupadas, dados.parte.Position)
+		end
+	end
+
+	local criadas = 0
+
+	for _, celula in ipairs(celulas) do
+
+		if criadas >= ESFERA_POR_JOGADOR then break end
+		local x = (celula.c - 1 + 0.5) * CELULA + offsetX
+		local z = -(celula.l - 1) * CELULA + offsetZ
+		local posicao = Vector3.new(x, yChao + ALTURA_FLUTUACAO, z)
+		local distanciaValida = true
+
+		for _, posAtiva in ipairs(posOcupadas) do
+			if (posicao - posAtiva).Magnitude < (DISTANCIA_MINIMA_SPAWN * CELULA) then
+				distanciaValida = false
+				break
+			end
+		end
+
+		if distanciaValida then
+			local esferas = criarEsferaEmLinhaColuna(celula.l, celula.c, tick() + criadas)
+			if esferas then
+				criadas += 1
+				table.insert(posOcupadas, posicao)
+			end
+		end
+	end
+
+	print(
+		"[ Esferas ] Criadas",
+		criadas,
+		"esferas para o novo jogador."
+	)
+end
+
+-- PLAYER ADDED
+
 Players.PlayerAdded:Connect(function(jogador)
 	task.delay(1, function()
 		criarEsferaParaNovoJogador()
-
-		local status = Dados.statusJogadores[jogador.UserId]
-		local minhasColetadas = status and status.esferasColetadas or 0
 		
 		for _, jogadorAtual in ipairs(Players:GetPlayers()) do
 			local statusAtual = Dados.statusJogadores[jogadorAtual.UserId]
 			local coletadas = statusAtual and statusAtual.esferasColetadas or 0
-			eventoHUD:FireClient(jogadorAtual, esferasNoMapa, minhasColetadas)
+			eventoHUD:FireClient(jogadorAtual, esferasNoMapa, coletadas)
 		end
 	end)
 
