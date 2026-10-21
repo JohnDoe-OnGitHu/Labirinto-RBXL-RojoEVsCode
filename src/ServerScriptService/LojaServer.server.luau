@@ -6,6 +6,9 @@ local DadosLoja = require(ReplicatedStorage:WaitForChild("DadosLoja"))
 local DadosLabirinto = require(ReplicatedStorage:WaitForChild("DadosLabirinto"))
 
 local eventoCompra = ReplicatedStorage:FindFirstChild("EventoCompra") or Instance.new("RemoteEvent", ReplicatedStorage)
+eventoCompra.Name = "EventoCompra"
+eventoCompra.Parent = ReplicatedStorage
+
 local eventoColetar = ReplicatedStorage:WaitForChild("EventoColetarItem")
 
 local function entregarItens(player, nomeItem, imagem, quantidade)
@@ -44,7 +47,7 @@ eventoCompra.OnServerEvent:Connect(function(player, nomeItem, quantidade, metodo
         -- Tipo de Pagamento: Robux
 
        elseif metodo == "Robux" then
-        if itemInfo.ProductId and itemInfo.Product > 0 then
+        if itemInfo.ProductID and itemInfo.ProductID > 0 then
             MarketplaceService:PromptProductPurchase(player, itemInfo.ProductID)
         else
             warn("O item " .. nomeItem .. " não tem um ProductId válido para compra com Robux.")
@@ -58,7 +61,7 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
 
     local itemComprado = nil
     for _, item in ipairs(DadosLoja.Itens) do
-        if item.ProductID == receiptInfo.ProductId then
+        if item.ProductID == receiptInfo.ProductID then
             itemComprado = item
             break
         end
