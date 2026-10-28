@@ -54,6 +54,21 @@ titulo.Font = Enum.Font.GothamBold
 titulo.TextSize = 24
 titulo.Parent = mainFrame
 
+local btnFechar = Instance.new("TextButton")
+btnFechar.Name = "BtnFechar"
+btnFechar.Text = "X"
+btnFechar.Size = UDim2.new(0, 36, 0, 36)
+btnFechar.Position = UDim2.new(1, -44, 0, 8)
+btnFechar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+btnFechar.TextColor3 = Color3.new(1, 1, 1)
+btnFechar.Font = Enum.Font.GothamBold
+btnFechar.TextSize = 20
+btnFechar.AutoButtonColor = true
+btnFechar.ZIndex = 2
+btnFechar.Parent = mainFrame
+
+Instance.new("UICorner", btnFechar).CornerRadius = UDim.new(0, 6)
+
 local scroll = Instance.new("ScrollingFrame")
 scroll.Size = UDim2.new(0.95, 0, 0.85, 0)
 scroll.Position = UDim2.new(0.025, 0, 0.12, 0)
@@ -131,6 +146,18 @@ local function criarCardItem(itemInfo)
 	lblQtd.Font = Enum.Font.GothamBold
 	lblQtd.Parent = seletorFrame
 
+	local avisoQtd = Instance.new("TextLabel")
+	avisoQtd.Name = "AvisoQuantidade"
+	avisoQtd.Text = "Qtd. valida somente para esferas"
+	avisoQtd.Size = UDim2.new(0.9, 0, 0, 18)
+	avisoQtd.Position = UDim2.new(0.05, 0, 0.70, 0)
+	avisoQtd.BackgroundTransparency = 1
+	avisoQtd.TextColor3 = Color3.fromRGB(220, 220, 220)
+	avisoQtd.Font = Enum.Font.Gotham
+	avisoQtd.TextSize = 10
+	avisoQtd.TextWrapped = true
+	avisoQtd.Parent = card
+	
 	local btnMais = Instance.new("TextButton")
 	btnMais.Text = "+"
 	btnMais.Size = UDim2.fromScale(0.2, 1)
@@ -150,7 +177,7 @@ local function criarCardItem(itemInfo)
 	-- ── CONTAINER DOS BOTÕES (LADO A LADO) ──
 	local botoesFrame = Instance.new("Frame")
 	botoesFrame.Size = UDim2.new(0.9, 0, 0.18, 0)
-	botoesFrame.Position = UDim2.fromScale(0.05, 0.75)
+	botoesFrame.Position = UDim2.fromScale(0.05, 0.79)
 	botoesFrame.BackgroundTransparency = 1
 	botoesFrame.Parent = card
 
@@ -218,7 +245,7 @@ local function criarCardItem(itemInfo)
 	local function atualizarPrecos()
 		lblQtd.Text = "Qtd: " .. qtd
 		textoEsfera.Text = tostring((itemInfo.PrecoEsferas or 0) * qtd)
-		textoRobux.Text = tostring((itemInfo.PrecoRobux or 0) * qtd)
+		textoRobux.Text = tostring(itemInfo.PrecoRobux or 0)
 	end
 
     btnMais.MouseButton1Click:Connect(function()
