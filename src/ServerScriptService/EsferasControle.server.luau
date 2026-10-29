@@ -426,7 +426,7 @@ end
 
 esferasNoMapa = #esferasAtivas
 
-for _, jogador in ipairs(esferasAtivas) do
+for _, jogador in ipairs(Players:GetPlayers()) do
 	local status = Dados.statusJogadores[jogador.UserId]
 	local minhasColetadas = status and status.esferasColetadas or 0
 	eventoHUD:FireClient(jogador, esferasNoMapa, minhasColetadas)

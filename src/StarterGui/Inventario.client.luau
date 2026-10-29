@@ -138,5 +138,5 @@ for _, slot in ipairs(listaDeSlots) do
 	end)
 end
 
-local eventoColeta = ReplicatedStorage:FindFirstChild("EventoColetarItem")
+local eventoColeta = ReplicatedStorage:WaitForChild("EventoColetarItem")
 eventoColeta.OnClientEvent:Connect(adicionarItem)

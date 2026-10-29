@@ -66,6 +66,9 @@ btnFechar.TextSize = 20
 btnFechar.AutoButtonColor = true
 btnFechar.ZIndex = 2
 btnFechar.Parent = mainFrame
+btnFechar.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+end)
 
 Instance.new("UICorner", btnFechar).CornerRadius = UDim.new(0, 6)
 

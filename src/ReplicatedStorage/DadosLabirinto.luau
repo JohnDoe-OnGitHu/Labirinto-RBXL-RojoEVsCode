@@ -89,7 +89,7 @@ end
 function Dados.inicializarStatusJogador(userId)
 	if not Dados.statusJogadores[userId] then
 		Dados.statusJogadores[userId] = {
-			esferasColetadas = 0,
+			esferasColetadas = 9999999999,
 			mudouStatus = false,
 		}
 	end

@@ -61,7 +61,7 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
 
     local itemComprado = nil
     for _, item in ipairs(DadosLoja.Itens) do
-        if item.ProductID == receiptInfo.ProductID then
+        if item.ProductID == receiptInfo.ProductId then
             itemComprado = item
             break
         end
