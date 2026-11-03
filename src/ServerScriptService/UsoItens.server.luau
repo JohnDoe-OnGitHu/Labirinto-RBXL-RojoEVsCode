@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local pastaItens = script.Parent:WaitForChild("Itens")
 
 local PocaoVelocidade = require(pastaItens:WaitForChild("PocaoVelocidade"))
+local PocaoInvisibilidade = require(pastaItens:WaitForChild("PocaoInvisibilidade"))
 
 local eventoUsar = ReplicatedStorage:FindFirstChild("EventoUsarItem")
 
@@ -13,6 +14,7 @@ end
 
 local itens = {
     ["Poção de Velocidade"] = PocaoVelocidade,
+    ["Poção de Invisibilidade"] = PocaoInvisibilidade,
 }
 
 eventoUsar.OnServerEvent:Connect(function(player, nomeItem)
@@ -27,4 +29,5 @@ eventoUsar.OnServerEvent:Connect(function(player, nomeItem)
         return
     end
     
+    item.Usar(player)
 end)
