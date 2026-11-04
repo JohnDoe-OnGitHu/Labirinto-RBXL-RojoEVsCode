@@ -3,6 +3,7 @@ local pastaItens = script.Parent:WaitForChild("Itens")
 
 local PocaoVelocidade = require(pastaItens:WaitForChild("PocaoVelocidade"))
 local PocaoInvisibilidade = require(pastaItens:WaitForChild("PocaoInvisibilidade"))
+local HamburgerForca = require(pastaItens:WaitForChild("HamburgerForca"))
 
 local eventoUsar = ReplicatedStorage:FindFirstChild("EventoUsarItem")
 
@@ -15,6 +16,7 @@ end
 local itens = {
     ["Poção de Velocidade"] = PocaoVelocidade,
     ["Poção de Invisibilidade"] = PocaoInvisibilidade,
+    ["Hamburger da Força"] = HamburgerForca,
 }
 
 eventoUsar.OnServerEvent:Connect(function(player, nomeItem)

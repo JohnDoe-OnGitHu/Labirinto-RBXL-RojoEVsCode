@@ -13,7 +13,7 @@ DadosLoja.Itens = {
 	},
 	{
 		Nome = "Hamburger da Força",
-		Descricao = "Hamburger da Força\n+100% de força quando chega em uma batalha",
+		Descricao = "Hamburger da Força\nHitkill de força quando chega em uma batalha",
 		PrecoEsferas = 20,
 		PrecoRobux = 18,
 		Imagem = "rbxassetid://480036317",
