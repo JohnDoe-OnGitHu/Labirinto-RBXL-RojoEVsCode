@@ -142,10 +142,22 @@ function GerenciadorArmas.spawnar()
 			end
 		end
 
+		if not clone.PrimaryPart then
+			clone.PrimaryPart = clone:FindFirstChild("Detector")
+			or clone:FindFirstChildWhichIsA("BasePart")
+			or clone:FindFirstChild("Handle")
+		end
+
 		clone.Parent = pasta
 
 		if clone.PrimaryPart then
-			clone:SetPrimaryPartCFrame(CFrame.new(cel.posicao))
+			clone:PivotTo(CFrame.new(cel.posicao))
+
+			for _, parte in ipairs(clone:GetDescendants()) do
+				if parte:IsA("BasePart") then
+					parte.Anchored = true
+				end
+			end
 		else
 			warn("[Armas] a espada não tem parte primaria colocada. vai la e coloca seu preguiçoso")
 		end

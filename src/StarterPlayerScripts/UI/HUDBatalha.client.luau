@@ -28,10 +28,26 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 local function criarSeta()
-	if setaModel then setaModel:Destroy() end
+	if setaModel then removerSeta() end
+
 	setaModel = templateSeta:Clone()
+
+	if not setaModel.PrimaryPart then
+		setaModel.PrimaryPart = setaModel:FindFirstChildWhichIsA("BasePart")
+	end
+
+	for _, parte in ipairs(setaModel:GetDescendants()) do
+		if parte:IsA("BasePart") then
+			parte.CanCollide = false
+			parte.Anchored = true
+		end
+	end
+	
+
 	setaModel.Parent = workspace
 end
+
+-- Loop suave a 60 FPS acompanhando a frente do jogador
 
 local function removerSeta()
 	if setaModel then
