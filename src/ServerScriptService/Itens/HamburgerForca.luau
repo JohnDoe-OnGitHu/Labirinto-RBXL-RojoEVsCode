@@ -1,6 +1,6 @@
 local HamburgerForca = {}
 
-local FORCA_GOLPE = 5
+local QUANTIDADE_GOLPE = 5
 
 function HamburgerForca.Usar(player)
     local char = player.Character
@@ -11,7 +11,7 @@ function HamburgerForca.Usar(player)
 
     local forcaOriginal = player:GetAttribute("Forca") or 0
 
-    player:SetAttribute("Forca", forcaOriginal + FORCA_GOLPE)
+    player:SetAttribute("Forca", forcaOriginal + QUANTIDADE_GOLPE)
 
     print(player.Name .. " ganhou +100% de força por 30 segundos!")
 end

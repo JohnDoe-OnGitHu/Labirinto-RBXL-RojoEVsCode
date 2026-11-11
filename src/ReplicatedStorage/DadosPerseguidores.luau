@@ -1,13 +1,13 @@
 local DadosPerseguidores = {	
-	INTEVALO_ENTRE_ONDAS 			= 120,
-	DURACAO_ONDA 					= 45,
-	TEMPO_ALERTA 					= 5,
-	TEMPO_ARMA	 					= 80,
+	INTEVALO_ENTRE_ONDAS 			= 45,
+	DURACAO_ONDA 					= 30,
+	TEMPO_ALERTA 					= 8,
+	TEMPO_ARMA	 					= 20,
 
 	--| ( Configuração de batalha ) |--
 
-	GOLPES_PARA_MATAR 				= 3,
-	DANO_PERSEGUIDOR 				= 34,
+	GOLPES_PARA_MATAR 				= 4,
+	DANO_PERSEGUIDOR 				= 24,
 	NOME_MODEL_ARMA 				= "Espada",
 
 	--| ( Quantidade ) |--

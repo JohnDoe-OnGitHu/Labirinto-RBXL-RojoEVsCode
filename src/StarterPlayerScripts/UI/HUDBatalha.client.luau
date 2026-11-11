@@ -4,6 +4,7 @@ local Players					= game:GetService("Players")
 local ReplicatedStorage			= game:GetService("ReplicatedStorage")
 local TweenService 				= game:GetService("TweenService")
 local UserInputService			= game:GetService("UserInputService") -- NOVO
+local RunService				= game:GetService("RunService") -- NOVO
 
 local player					= Players.LocalPlayer
 local playerGui					= player:WaitForChild("PlayerGui")
@@ -27,6 +28,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
+local conexaoRenderSeta = nil
+
+local function removerSeta()
+	if conexaoRenderSeta then
+		conexaoRenderSeta:Disconnect()
+		conexaoRenderSeta = nil
+	end
+	if setaModel then
+		setaModel:Destroy()
+		setaModel = nil
+	end
+end
+
 local function criarSeta()
 	if setaModel then removerSeta() end
 
@@ -45,40 +59,30 @@ local function criarSeta()
 	
 
 	setaModel.Parent = workspace
-end
+	
+	-- Loop suave a 60 FPS acompanhando a frente do jogador
 
--- Loop suave a 60 FPS acompanhando a frente do jogador
+	conexaoRenderSeta = RunService.RenderStepped:Connect(function()
+		if not setaModel or not posicaoArmaAlvo or estaArmado then
+			removerSeta()
+			return
+		end
 
-local function removerSeta()
-	if setaModel then
-		setaModel:Destroy()
-		setaModel = nil
-	end
-end
+		local char = player.Character
+		if char then
+			local root = char:FindFirstChild("HumanoidRootPart")
+			if root and setaModel.PrimaryPart then
+				local frente = root.CFrame.LookVector
+				local posicao = root.Position + (frente * 3.5) + Vector3.new(0, 1, 0)
 
-task.spawn(function() -- < Loop que coloca e gira a seta na frente do usuario
-	while true do
-		task.wait(0.1)
-
-		if setaModel and posicaoArmaAlvo and not estaArmado then
-			local char = player.Character
-			if char then
-				local root		= char:FindFirstChild("HumanoidRootPart")
-				if root then
-					local frente  = root.CFrame.LookVector
-					local posicao = root.Position + frente * 3 + Vector3.new(0, 1, 0)
-					local direcao = (posicaoArmaAlvo - root.Position) * Vector3.new(1, 0 ,1)
-
-					setaModel:SetPrimaryPartCFrame(
-						CFrame.new(posicao) * CFrame.Angles(0, math.atan2(direcao.X, direcao.Z) + math.pi/2, 0)
-					)
+				local direcao = Vector3.new(posicaoArmaAlvo.X, posicaoArmaAlvo.Y, posicaoArmaAlvo.Z)
+				if (direcao - posicao).Magnitude > 0.1 then
+					setaModel:PivotTo(CFrame.lookAt(posicao, direcao))
 				end
 			end
-		elseif setaModel and (estaArmado or not posicaoArmaAlvo) then
-			removerSeta()
 		end
-	end
-end)
+	end)
+end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ScreenGui"
@@ -280,23 +284,12 @@ UIAspectRatioConstraint7.Name = "UIAspectRatioConstraint"
 UIAspectRatioConstraint7.AspectRatio = 2
 UIAspectRatioConstraint7.Parent = ko
 
-
--- Cor de vida
-
-local function corDaVida(progresso)
-	if progresso < 0.5 then
-		return Color3.fromRGB(math.floor(255 * (progresso * 2)), 220, 0)
-	else
-		return Color3.fromRGB(255, math.floor(220 * (1 - ( progresso - 0.5) * 2)), 0)
-	end
-end
-
 local function atualizarVida()
 	local char = player.Character
 	if char and char:FindFirstChild("Humanoid") then
 			local hum = char.Humanoid
 			local escala = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-			TweenService:Create(bar, TweenInfo.new(0.3), {Size - UDim2.fromScale(escala, 1)}):Play()
+			TweenService:Create(bar, TweenInfo.new(0.3), {Size = UDim2.fromScale(escala, 1)}):Play()
 	end
 end
 

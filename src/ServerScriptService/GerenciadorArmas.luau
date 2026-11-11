@@ -256,16 +256,25 @@ function GerenciadorArmas.registrarGolpe(jogador, perseguidor)
 	local root = char:FindFirstChild("HumanoidRootPart")
 	local rootPers = perseguidor and perseguidor:FindFirstChild("HumanoidRootPart")
 	if not root or not rootPers then return end
-	if (root.Position - rootPers.Position).Magnitude > 15 then return end
+	if (root.Position - rootPers.Position).Magnitude > 20 then return end
 
 	local hum = perseguidor:FindFirstChild("Humanoid")
 	if not hum or hum.Health <= 0 then return end
 
-	local danoGolpe = hum.MaxHealth / DadosPers.GOLPES_PARA_MATAR
-	hum.Health = math.max(0, hum.Health - danoGolpe)
+	local golpesLetais = jogador:GetAttribute("GolpesLetais") or 0
 
-	local progresso = hum.Health / hum.MaxHealth
-	eventoArma:FireClient(jogador, "danoPerseguidor", progresso)
+	local dano
+	if golpesLetais > 0 then
+		dano = (hum.MaxHealth / DadosPers.GOLPES_PARA_MATAR) * 2
+		jogador:SetAttribute("GolpesLetais", golpesLetais - 1)
+	else
+		dano = hum.MaxHealth / DadosPers.GOLPES_PARA_MATAR
+	end
+
+	hum.Health = math.max(0, hum.Health - dano)
+
+	local vidaRestante = hum.Health / hum.MaxHealth
+	eventoArma:FireClient(jogador, "danoPerseguidor", vidaRestante)
 
 	if hum.Health <= 0 then
 		DadosPers.perseguidoresMortos += 1
