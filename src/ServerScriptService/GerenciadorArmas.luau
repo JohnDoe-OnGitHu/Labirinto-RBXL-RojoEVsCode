@@ -22,6 +22,8 @@ local GerenciadorArmas = {}
 
 local armasAtivas = {}
 local jogadoresArmados = {}
+local ultimoGolpePorJogador = {}
+local COOLDOWN_GOLPE = 0.5
 
 local function escolherCelulasArma(quantidade)
 	local celulas = Dados.obterCelulasAbertas()
@@ -249,17 +251,42 @@ function GerenciadorArmas.desarmarJogador(jogador)
 	eventoArma:FireClient(jogador, "armado", false)
 end
 
-function GerenciadorArmas.registrarGolpe(jogador, perseguidor)
+function GerenciadorArmas.registrarGolpe(jogador)
 	if not jogadoresArmados[jogador.UserId] then return end
 
 	local char = jogador.Character
 	local root = char:FindFirstChild("HumanoidRootPart")
-	local rootPers = perseguidor and perseguidor:FindFirstChild("HumanoidRootPart")
-	if not root or not rootPers then return end
-	if (root.Position - rootPers.Position).Magnitude > 20 then return end
+	if not root then return end
 
-	local hum = perseguidor:FindFirstChild("Humanoid")
+	local pasta = workspace:FindFirstChild(DadosPers.NOME_PASTA_ATIVOS)
+	if not pasta then return end
+
+	local alvoMaisProximo = nil
+	local menorDistancia = 20
+	for _, modelo in ipairs(pasta:GetChildren()) do
+		local rootAlvo = modelo:FindFirstChild("HumanoidRootPart")
+		local humanoidAlvo = modelo:FindFirstChildOfClass("Humanoid")
+		if rootAlvo and humanoidAlvo and humanoidAlvo.Health > 0 then
+			local distancia = (root.Position - rootAlvo.Position).Magnitude
+			if distancia < menorDistancia then
+				menorDistancia = distancia
+				alvoMaisProximo = modelo
+			end
+		end
+	end
+
+	if not alvoMaisProximo then return end
+
+	local rootPers = alvoMaisProximo:FindFirstChild("HumanoidRootPart")
+	if not rootPers then return end
+
+	local hum = alvoMaisProximo:FindFirstChildOfClass("Humanoid")
 	if not hum or hum.Health <= 0 then return end
+
+	local agora = os.clock()
+	local ultimoGolpe = ultimoGolpePorJogador[jogador.UserId] or 0
+	if agora - ultimoGolpe < COOLDOWN_GOLPE then return end
+	ultimoGolpePorJogador[jogador.UserId] = agora
 
 	local golpesLetais = jogador:GetAttribute("GolpesLetais") or 0
 
@@ -281,7 +308,7 @@ function GerenciadorArmas.registrarGolpe(jogador, perseguidor)
 		-- GerenciadorArmas.desarmarJogador(jogador)
 		eventoPontos:FireAllClients(DadosPers.perseguidoresMortos, jogador.Name)
 		-- eventoArma:FireClient(jogador, "armado", false)
-		perseguidor:Destroy()
+		alvoMaisProximo:Destroy()
 	end
 end
 
@@ -299,6 +326,7 @@ function GerenciadorArmas.remover()
 	end
 	armasAtivas = {}
 	jogadoresArmados = {}
+	ultimoGolpePorJogador = {}
 	
 	for _, jogador in ipairs(Players:GetPlayers()) do
 		eventoArma:FireClient(jogador, "removerSeta", true)

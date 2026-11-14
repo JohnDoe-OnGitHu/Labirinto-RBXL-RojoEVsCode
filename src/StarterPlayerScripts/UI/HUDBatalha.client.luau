@@ -3,14 +3,12 @@
 local Players					= game:GetService("Players")
 local ReplicatedStorage			= game:GetService("ReplicatedStorage")
 local TweenService 				= game:GetService("TweenService")
-local UserInputService			= game:GetService("UserInputService") -- NOVO
 local RunService				= game:GetService("RunService") -- NOVO
 
 local player					= Players.LocalPlayer
 local playerGui					= player:WaitForChild("PlayerGui")
 local eventoArma				= ReplicatedStorage:WaitForChild("AtualizarBatalha")
 local eventoPontos				= ReplicatedStorage:WaitForChild("AtualizarPerseguidoresMortos")
-local golpeEvento				= ReplicatedStorage:WaitForChild("GolpeEspada")
 
 --> Estado						<--
 
@@ -18,15 +16,6 @@ local estaArmado				= false
 local posicaoArmaAlvo			= nil
 local setaModel					= nil
 local templateSeta				= ReplicatedStorage:WaitForChild("SetaBussula")
-
-local TECLA_ATAQUE				= Enum.KeyCode.F
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if estaArmado and input.KeyCode == TECLA_ATAQUE then
-		golpeEvento:FireServer()
-	end
-end)
 
 local conexaoRenderSeta = nil
 

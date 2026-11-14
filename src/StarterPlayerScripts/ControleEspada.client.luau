@@ -4,9 +4,7 @@
 -- LOCAL: StarterPlayerScripts
 --
 -- O QUE FAZ:
--- Detecta quando o jogador está armado e clica com o mouse.
--- Verifica se há um perseguidor próximo e manda o golpe
--- para o servidor via RemoteEvent.
+-- Detecta o clique na espada ou a tecla F e solicita o golpe ao servidor.
 -- ============================================================
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,7 +17,7 @@ local eventoGolpe = ReplicatedStorage:WaitForChild("GolpeEspada")
 local estaArmado = false
 local podeClicar = true
 local COOLDOWN_GOLPE = 0.5
-local RAIO_GOLPE = 15
+local ferramentasConectadas = setmetatable({}, { __mode = "k" })
 
 eventoArma.OnClientEvent:Connect(function(tipo, valor)
 	if tipo == "armado" then
@@ -27,37 +25,41 @@ eventoArma.OnClientEvent:Connect(function(tipo, valor)
 	end
 end)
 
--- Detecta Tecla F
+local function solicitarGolpe()
+	if not estaArmado or not podeClicar then return end
+
+	local personagem = player.Character
+	local humanoide = personagem and personagem:FindFirstChildOfClass("Humanoid")
+	if not humanoide or humanoide.Health <= 0 then return end
+
+	podeClicar = false
+	eventoGolpe:FireServer()
+	task.delay(COOLDOWN_GOLPE, function()
+		podeClicar = true
+	end)
+end
+
+local function conectarFerramenta(instancia)
+	if instancia:IsA("Tool") and instancia.Name == "Espada" and not ferramentasConectadas[instancia] then
+		ferramentasConectadas[instancia] = true
+		instancia.Activated:Connect(solicitarGolpe)
+	end
+end
+
+local function configurarPersonagem(personagem)
+	personagem.ChildAdded:Connect(conectarFerramenta)
+	for _, instancia in ipairs(personagem:GetChildren()) do
+		conectarFerramenta(instancia)
+	end
+end
+
+player.CharacterAdded:Connect(configurarPersonagem)
+if player.Character then
+	configurarPersonagem(player.Character)
+end
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.F and estaArmado and podeClicar then
-		
-		local char = player.Character
-		if not char then return end
-		local root = char:FindFirstChild("HumanoidRootPart")
-		if not root then return end
-		
-		local perseguidorAlvo = nil
-		local menorDist = RAIO_GOLPE
-		local pasta = workspace:FindFirstChild("PerseguidoresAtivos")
-		if not pasta then return end
-		
-		for _, modelo in ipairs(pasta:GetChildren()) do
-			local rootPers = modelo:FindFirstChild("HumanoidRootPart")
-			local hum = modelo:FindFirstChildOfClass("Humanoid")
-			if rootPers and hum and hum.Health > 0 then
-				local dist = (root.Position - rootPers.Position).Magnitude
-				if dist < menorDist then
-					menorDist = dist
-					perseguidorAlvo = modelo
-				end
-			end
-		end
-		
-		if perseguidorAlvo then
-			podeClicar = false
-			eventoGolpe:FireServer(perseguidorAlvo)
-			task.delay(COOLDOWN_GOLPE, function() podeClicar = true end)
-		end
+	if not gameProcessed and input.KeyCode == Enum.KeyCode.F then
+		solicitarGolpe()
 	end
 end)
