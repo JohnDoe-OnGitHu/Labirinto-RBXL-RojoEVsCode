@@ -3,12 +3,15 @@
 local Players					= game:GetService("Players")
 local ReplicatedStorage			= game:GetService("ReplicatedStorage")
 local TweenService 				= game:GetService("TweenService")
+local UserInputService			= game:GetService("UserInputService")
 local RunService				= game:GetService("RunService") -- NOVO
 
 local player					= Players.LocalPlayer
 local playerGui					= player:WaitForChild("PlayerGui")
+
 local eventoArma				= ReplicatedStorage:WaitForChild("AtualizarBatalha")
 local eventoPontos				= ReplicatedStorage:WaitForChild("AtualizarPerseguidoresMortos")
+local golpeEvento				= ReplicatedStorage:WaitForChild("GolpeEspada")
 
 --> Estado						<--
 
@@ -16,6 +19,72 @@ local estaArmado				= false
 local posicaoArmaAlvo			= nil
 local setaModel					= nil
 local templateSeta				= ReplicatedStorage:WaitForChild("SetaBussula")
+local SoundService				= game:GetService("SoundService")
+
+--> Configuração de Tecla       <--
+local TECLA_ATAQUE = Enum.KeyCode.F
+local COOLDOWN_ATAQUE = 0.65
+local SOM_CORTE_ID = "rbxassetid://111147793954530"
+
+local ultimoAtaque = 0
+
+local function tocarGolpeEspada()
+	if SOM_CORTE_ID ~= "" then
+		local som = Instance.new("Sound")
+		som.SoundId = SOM_CORTE_ID
+		som.Volume = 1
+		som.Parent = SoundService
+		som:Play()
+		som.Ended:Connect(function() som:Destroy() end)
+		task.delay(2, function() if som.Parent then som:Destroy() end end)
+	end
+
+	local char = player.Character
+	if not char then return end
+
+	local tool = char:FindFirstChildOfClass("Tool")
+	if not tool then return end
+	
+	local hand = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
+	local rightGrip = hand and hand:FindFirstChild("RightGrip")
+	if not rightGrip then return end
+
+	local gripBase = tool.Grip
+	local gripAtaque = gripBase * CFrame.Angles(math.rad(80), math.rad(15), math.rad(-20))
+
+	local ida = TweenService:Create(
+		rightGrip,
+		TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ C1 = gripAtaque }
+	)
+
+	local volta = TweenService:Create(
+		rightGrip,
+		TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ C1 = gripBase }
+	)
+
+	ida:Play()
+	ida.Completed:Once(function(status)
+		if status == Enum.PlaybackState.Completed and rightGrip then
+			volta:Play()
+		end
+	end)
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+
+	if gameProcessed then return end
+	if not estaArmado then return end
+
+	if input.KeyCode == TECLA_ATAQUE or input.UserInputType == Enum.UserInputType.MouseButton1 then
+		local agora = os.clock()
+		if (agora - ultimoAtaque) < COOLDOWN_ATAQUE then return end
+		ultimoAtaque = agora
+		tocarGolpeEspada()
+		golpeEvento:FireServer()
+	end
+end)
 
 local conexaoRenderSeta = nil
 
@@ -77,7 +146,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ScreenGui"
 ScreenGui.Enabled = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = playerGui
 
 local healthPlayer = Instance.new("Frame")
 healthPlayer.Name = "healthPlayer"
