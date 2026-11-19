@@ -251,46 +251,24 @@ function GerenciadorArmas.desarmarJogador(jogador)
 	eventoArma:FireClient(jogador, "armado", false)
 end
 
+local SOM_IMPACTO_ID = "rbxassetid://96948863449692"
+
 function GerenciadorArmas.registrarGolpe(jogador)
 	if not jogadoresArmados[jogador.UserId] then return end
 
 	local char = jogador.Character
 	local root = char:FindFirstChild("HumanoidRootPart")
+	local rootPers = perseguidor and perseguidor:FindFirstChild("HumanoidRootPart")
+
 	if not root then return end
+	if (root.Position - rootPers.Position).Magnitude > 20 then return end
 
-	local pasta = workspace:FindFirstChild(DadosPers.NOME_PASTA_ATIVOS)
-	if not pasta then return end
-
-	local alvoMaisProximo = nil
-	local menorDistancia = 20
-	for _, modelo in ipairs(pasta:GetChildren()) do
-		local rootAlvo = modelo:FindFirstChild("HumanoidRootPart")
-		local humanoidAlvo = modelo:FindFirstChildOfClass("Humanoid")
-		if rootAlvo and humanoidAlvo and humanoidAlvo.Health > 0 then
-			local distancia = (root.Position - rootAlvo.Position).Magnitude
-			if distancia < menorDistancia then
-				menorDistancia = distancia
-				alvoMaisProximo = modelo
-			end
-		end
-	end
-
-	if not alvoMaisProximo then return end
-
-	local rootPers = alvoMaisProximo:FindFirstChild("HumanoidRootPart")
-	if not rootPers then return end
-
-	local hum = alvoMaisProximo:FindFirstChildOfClass("Humanoid")
+	local hum = perseguidor:FindFirstChildOfClass("Humanoid")
 	if not hum or hum.Health <= 0 then return end
 
-	local agora = os.clock()
-	local ultimoGolpe = ultimoGolpePorJogador[jogador.UserId] or 0
-	if agora - ultimoGolpe < COOLDOWN_GOLPE then return end
-	ultimoGolpePorJogador[jogador.UserId] = agora
-
 	local golpesLetais = jogador:GetAttribute("GolpesLetais") or 0
-
 	local dano
+
 	if golpesLetais > 0 then
 		dano = (hum.MaxHealth / DadosPers.GOLPES_PARA_MATAR) * 2
 		jogador:SetAttribute("GolpesLetais", golpesLetais - 1)
@@ -300,15 +278,62 @@ function GerenciadorArmas.registrarGolpe(jogador)
 
 	hum.Health = math.max(0, hum.Health - dano)
 
+	if SOM_IMPACTO_ID then
+		local som = Instance.new("Sound")
+		som.SoundId = SOM_IMPACTO_ID
+		som.Volume = 0.8
+		som.PlaybackSpeed = math.random(95, 110) / 100
+		som.Parent = root
+		som:Play()
+		som.Ended:Connect(function() som:Destroy() end)
+		task.delay(2, function() if som.Parent then som:Destroy() end end)
+	end
+
 	local vidaRestante = hum.Health / hum.MaxHealth
 	eventoArma:FireClient(jogador, "danoPerseguidor", vidaRestante)
 
 	if hum.Health <= 0 then
 		DadosPers.perseguidoresMortos += 1
-		-- GerenciadorArmas.desarmarJogador(jogador)
-		eventoPontos:FireAllClients(DadosPers.perseguidoresMortos, jogador.Name)
-		-- eventoArma:FireClient(jogador, "armado", false)
-		alvoMaisProximo:Destroy()
+		eventoPontos:FireAllClients(
+			DadosPers.perseguidoresMortos,
+			jogador.Name
+		)
+		perseguidor:Destroy()
+	else
+		local flashAntigo = perseguidor:FindFirstChild("FlashDano")
+		if flashAntigo then flashAntigo:Destroy() end
+
+		local flash = Instance.new("HighLight")
+		flash.Name = "FlashDano"
+		flash.FillColor = Color3.fromRGB(255, 60, 60)
+		flash.FillTransparency = 0.25
+		flash.OutlineColor = Color3.new(1, 1, 1)
+		flash.OutlineTransparency = 0
+		flash.Parent = perseguidor
+
+		task.delay(0.14, function()
+			if flash and flash.Parent then flash:Destroy() end
+		end)
+
+		local direcao = (rootPers.Position - root.Position) * Vector3.new(1, 0, 1)
+		if direcao.Magnitude > 0.05 then
+			direcao = direcao.Unit
+
+			local att = Instance.new("Attachment")
+			att.Parent = rootPers
+
+			local lv = Instance.new("LinearVelocity")
+			lv.Attachment0 = att
+			lv.ForceLimitMode = Enum.ForceLimitMode.PerAxis
+			lv.MaxAxesForce = Vector3.new(25000, 0, 25000)
+			lv.VectorVelocity = direcao * 35
+			lv.Parent = rootPers
+
+			task.delay(0.14, function()
+				if lv and lv.Parent then lv:Destroy() end
+				if att and att.Parent then att:Destroy() end
+			end)
+		end
 	end
 end
 
